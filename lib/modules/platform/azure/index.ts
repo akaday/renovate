@@ -261,7 +261,11 @@ export async function getPrList(): Promise<AzurePr[]> {
     do {
       fetchedPrs = await azureApiGit.getPullRequests(
         config.repoId,
-        { status: 4 },
+        {
+          status: 4,
+          // fetch only prs directly created on the repo and not by forks
+          sourceRepositoryId: config.project,
+        },
         config.project,
         0,
         skip,
@@ -822,11 +826,13 @@ export async function mergePr({
 
     if (!isClosed) {
       logger.warn(
-        { pullRequestId, status: pr.status },
-        `Expected PR to have status ${
-          PullRequestStatus[PullRequestStatus.Completed]
-          // TODO #22198
-        }. However, it is ${PullRequestStatus[pr.status!]}.`,
+        {
+          pullRequestId,
+          status: pr.status,
+          expectedPRStatus: PullRequestStatus[PullRequestStatus.Completed],
+          actualPRStatus: PullRequestStatus[pr.status!],
+        },
+        'Expected PR to have completed status. However, the PR has a different status',
       );
     }
     return true;

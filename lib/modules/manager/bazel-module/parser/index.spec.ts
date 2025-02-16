@@ -21,17 +21,17 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
           },
           true,
         ),
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_bar'),
             version: fragments.string('1.0.0'),
             dev_dependency: fragments.boolean(true),
@@ -54,17 +54,17 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
           },
           true,
         ),
-        fragments.record(
+        fragments.rule(
+          'git_override',
           {
-            rule: fragments.string('git_override'),
             module_name: fragments.string('rules_foo'),
             patches: fragments.array(
               [fragments.string('//:rules_foo.patch')],
@@ -94,17 +94,17 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
           },
           true,
         ),
-        fragments.record(
+        fragments.rule(
+          'archive_override',
           {
-            rule: fragments.string('archive_override'),
             module_name: fragments.string('rules_foo'),
             urls: fragments.array(
               [fragments.string('https://example.com/archive.tar.gz')],
@@ -126,17 +126,17 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
           },
           true,
         ),
-        fragments.record(
+        fragments.rule(
+          'local_path_override',
           {
-            rule: fragments.string('local_path_override'),
             module_name: fragments.string('rules_foo'),
             urls: fragments.string('/path/to/repo'),
           },
@@ -156,17 +156,17 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.rule(
+          'bazel_dep',
           {
-            rule: fragments.string('bazel_dep'),
             name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
           },
           true,
         ),
-        fragments.record(
+        fragments.rule(
+          'single_version_override',
           {
-            rule: fragments.string('single_version_override'),
             module_name: fragments.string('rules_foo'),
             version: fragments.string('1.2.3'),
             registry: fragments.string('https://example.com/custom_registry'),
@@ -193,9 +193,11 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.extensionTag(
+          'maven',
+          'maven',
+          'artifact',
           {
-            rule: fragments.string('maven_artifact'),
             group: fragments.string('org.clojure'),
             artifact: fragments.string('core.specs.alpha'),
             version: fragments.string('0.2.56'),
@@ -212,9 +214,11 @@ describe('modules/manager/bazel-module/parser/index', () => {
           },
           true,
         ),
-        fragments.record(
+        fragments.extensionTag(
+          'maven',
+          'maven_1',
+          'artifact',
           {
-            rule: fragments.string('maven_artifact'),
             group: fragments.string('org.clojure1'),
             artifact: fragments.string('core.specs.alpha1'),
             version: fragments.string('0.2.561'),
@@ -244,9 +248,11 @@ describe('modules/manager/bazel-module/parser/index', () => {
       `;
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.extensionTag(
+          'maven',
+          'maven',
+          'install',
           {
-            rule: fragments.string('maven_install'),
             artifacts: fragments.array(
               [
                 {
@@ -275,9 +281,11 @@ describe('modules/manager/bazel-module/parser/index', () => {
           },
           true,
         ),
-        fragments.record(
+        fragments.extensionTag(
+          'maven',
+          'maven',
+          'artifact',
           {
-            rule: fragments.string('maven_artifact'),
             group: fragments.string('org.clojure'),
             artifact: fragments.string('core.specs.alpha'),
             version: fragments.string('0.2.56'),
@@ -300,9 +308,11 @@ describe('modules/manager/bazel-module/parser/index', () => {
 
       const res = parse(input);
       expect(res).toEqual([
-        fragments.record(
+        fragments.extensionTag(
+          'oci',
+          'oci',
+          'pull',
           {
-            rule: fragments.string('oci_pull'),
             name: fragments.string('nginx_image'),
             digest: fragments.string(
               'sha256:287ff321f9e3cde74b600cc26197424404157a72043226cbbf07ee8304a2c720',
@@ -310,6 +320,38 @@ describe('modules/manager/bazel-module/parser/index', () => {
             image: fragments.string('index.docker.io/library/nginx'),
             platforms: fragments.array([fragments.string('linux/amd64')], true),
             tag: fragments.string('1.27.1'),
+          },
+          true,
+        ),
+      ]);
+    });
+
+    it('finds the git_repository', () => {
+      const input = codeBlock`
+        git_repository(
+          name = "rules_foo",
+          remote = "https://github.com/example/rules_foo.git",
+          commit = "6a2c2e22849b3e6b33d5ea9aa72222d4803a986a",
+          patches = ["//:rules_foo.patch"],
+          patch_strip = 1,
+        )
+      `;
+      const res = parse(input);
+      expect(res).toEqual([
+        fragments.rule(
+          'git_repository',
+          {
+            name: fragments.string('rules_foo'),
+            patches: fragments.array(
+              [fragments.string('//:rules_foo.patch')],
+              true,
+            ),
+            commit: fragments.string(
+              '6a2c2e22849b3e6b33d5ea9aa72222d4803a986a',
+            ),
+            remote: fragments.string(
+              'https://github.com/example/rules_foo.git',
+            ),
           },
           true,
         ),
